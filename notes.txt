@@ -1,0 +1,16 @@
+  {
+        
+        "username": "Mahib",
+        "name": "Sam",
+        "email": "Mahib.doe@example.com",
+        "password": "password123",
+        "role": "doctor",
+        "number": "1234567890",
+        "expertise": "Software Engineering",
+        "degree": "BSc Computer Science",
+        "image": "image1.jpg",
+        "schedule": "9am-5pm",
+        "credential": "Credential A",
+        "deskid": "Desk 1",
+        "verified": true
+    }
