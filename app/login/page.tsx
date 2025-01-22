@@ -1,14 +1,18 @@
 "use client"
 
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import Header from "@/components/Header"
+import { useEffect } from 'react'
 
 export default function Login() {
+  useEffect(() => {
+    console.log('useEffect')
+  }, [])
   const router = useRouter()
   const [formData, setFormData] = useState({
     username: '',
@@ -18,9 +22,12 @@ export default function Login() {
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('submit')
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    console.log(formData)
 
     try {
       const response = await fetch('http://localhost:9090/api/user/login', {
@@ -31,15 +38,19 @@ export default function Login() {
         body: JSON.stringify(formData)
       })
 
+      console.log(response);
+
       if (!response.ok) {
         throw new Error('Login failed')
       }
+      console.log("alu")  
+      const data = await response.text()
 
-      const data = await response.json()
+      console.log(data)
       
       // Store JWT token
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('token', data)
+      //localStorage.setItem('user', JSON.stringify(data.user))
 
       // Redirect based on role
       router.push(data.user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard')
@@ -81,7 +92,7 @@ export default function Login() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading} onClick={handleSubmit}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
             </form>

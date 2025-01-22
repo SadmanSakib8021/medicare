@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -27,52 +28,82 @@ const specialties = [
   "Urology",
 ]
 
-const doctors = [
-  {
-    id: 1,
-    name: "Dr. Elyssa Perry",
-    designation: "Senior at Orthopedic",
-    imageUrl: "/placeholder.svg?height=100&width=100",
-    isAvailable: true,
-  },
-  {
-    id: 2,
-    name: "Dr. John Doe",
-    designation: "Cardiologist",
-    imageUrl: "/placeholder.svg?height=100&width=100",
-    isAvailable: false,
-  },
-  {
-    id: 3,
-    name: "Dr. Jane Smith",
-    designation: "Pediatrician",
-    imageUrl: "/placeholder.svg?height=100&width=100",
-    isAvailable: true,
-  },
-  {
-    id: 4,
-    name: "Dr. Mike Johnson",
-    designation: "Neurologist",
-    imageUrl: "/placeholder.svg?height=100&width=100",
-    isAvailable: true,
-  },
-  {
-    id: 5,
-    name: "Dr. Sarah Brown",
-    designation: "Dermatologist",
-    imageUrl: "/placeholder.svg?height=100&width=100",
-    isAvailable: false,
-  },
-  {
-    id: 6,
-    name: "Dr. Lena Mariana",
-    designation: "Senior at Orthopedic",
-    imageUrl: "/placeholder.svg?height=100&width=100",
-    isAvailable: true,
-  },
-]
-
 export default function BookConsultation() {
+  const [doctors, setDoctors] = useState<{ id: string; [key: string]: any }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const [achoda, setAchoda] = useState("Myself")
+
+  const [aluDoctor, setAluDoctor] = useState([])
+
+
+
+  function filterDoctors(ex: string) {
+    const doctorska = aluDoctor.filter((doctor: { expertise: string }) => {
+      return doctor.expertise === ex
+    })
+    //setAluDoctors(doctors)
+    setAluDoctor(doctorska)
+  }
+
+  function filterDoctorsByName(substring: string) {
+    if (substring.trim() === "") {
+      setAluDoctor(doctors)
+      return
+    }
+    const doctorska = aluDoctor.filter((doctor: { name: string }) => {
+      return doctor.name.toLowerCase().includes(substring.toLowerCase())
+    })
+    setAluDoctor(doctorska)
+  }
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        console.log(token)
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const response = await fetch('http://localhost:9090/api/doctor/alldoctor', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+
+        console.log(response.status)
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            //router.push('/login')
+            //return
+          }
+          throw new Error('Failed to fetch doctors')
+        }
+
+        const data = await response.json()
+        setDoctors(data)
+        setAluDoctor(data)
+        console.log(data)
+      } catch (err) {
+        console.error(err)
+        setError('Failed to load doctors')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDoctors()
+  }, [router])
+
+  if (loading) return <div>Loading doctors...</div>
+  if (error) return <div className="text-red-500">{error}</div>
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -83,34 +114,39 @@ export default function BookConsultation() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
           <div className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <Input placeholder="Patient name" />
-              <Input placeholder="Phone or Email" />
-            </div>
-            <RadioGroup defaultValue="myself" className="flex space-x-4 mb-4">
+            {achoda === "someone" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Input placeholder="Patient name" />
+                <Input placeholder="Phone or Email" />
+              </div>
+            ) : null}
+            <RadioGroup defaultValue="myself" className="flex space-x-4 mb-4" onValueChange={(value) => {
+              setAchoda(value);
+              console.log(value);
+            }}>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="myself" id="myself" />
-                <Label htmlFor="myself">Myself</Label>
+              <RadioGroupItem value="myself" id="myself" />
+              <Label htmlFor="myself">Myself</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="someone" id="someone" />
-                <Label htmlFor="someone">Someone</Label>
+              <RadioGroupItem value="someone" id="someone" />
+              <Label htmlFor="someone">Someone</Label>
               </div>
             </RadioGroup>
             <Button className="bg-orange-500 hover:bg-orange-600 text-white font-bold">Submit</Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {doctors.map((doctor) => (
-              <DoctorCard key={doctor.id} doctor={doctor} />
+            {aluDoctor.map((doctor) => (
+              <DoctorCard  doctor={doctor} />
             ))}
           </div>
         </div>
 
         <div>
           <div className="mb-6">
-            <Input placeholder="Search doctors or clinics" className="mb-4" />
-            <Select defaultValue="bangladesh">
+            <Input placeholder="Search doctors or clinics" className="mb-4" onChange={(e) => filterDoctorsByName(e.target.value)}/>
+            {/* <Select defaultValue="bangladesh">
               <SelectTrigger>
                 <SelectValue placeholder="Select a country" />
               </SelectTrigger>
@@ -119,8 +155,8 @@ export default function BookConsultation() {
                 <SelectItem value="india">India</SelectItem>
                 <SelectItem value="pakistan">Pakistan</SelectItem>
               </SelectContent>
-            </Select>
-            <Select>
+            </Select> */}
+            {/* <Select>
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder="Select a State" />
               </SelectTrigger>
@@ -129,24 +165,33 @@ export default function BookConsultation() {
                 <SelectItem value="chittagong">Chittagong</SelectItem>
                 <SelectItem value="rajshahi">Rajshahi</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
           </div>
 
-          <div className="mb-6">
+            <div className="mb-6">
             <h3 className="font-bold mb-2">Speciality</h3>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {specialties.map((specialty) => (
                 <div key={specialty} className="flex items-center">
-                  <Checkbox id={specialty} />
-                  <label htmlFor={specialty} className="ml-2 text-sm">
-                    {specialty}
-                  </label>
+                <Checkbox 
+                  id={specialty} 
+                  onCheckedChange={(checked) => {
+                  if (checked) {
+                    filterDoctors(specialty)
+                  } else {
+                    setAluDoctor(doctors)
+                  }
+                  }} 
+                />
+                <label htmlFor={specialty} className="ml-2 text-sm">
+                  {specialty}
+                </label>
                 </div>
               ))}
             </div>
-          </div>
+            </div>
 
-          <div>
+            <div>
             <h3 className="font-bold mb-2">Qualification</h3>
             <Select>
               <SelectTrigger>
