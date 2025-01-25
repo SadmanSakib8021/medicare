@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import Header from "@/components/Header"
 import { useEffect } from 'react'
 
-export default function Login() {
+export default function LoginPage() {
   useEffect(() => {
     console.log('useEffect')
   }, [])
@@ -21,13 +21,30 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    console.log('submit')
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  const getUserProfile = async (token: string) => {
+    try {
+      const response = await fetch('http://localhost:9090/api/user/myprofile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const profileData = await response.json();
+      return profileData;
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      throw error;
+    }
+  };
 
-    console.log(formData)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     try {
       const response = await fetch('http://localhost:9090/api/user/login', {
@@ -36,30 +53,32 @@ export default function Login() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData)
-      })
-
-      console.log(response);
+      });
 
       if (!response.ok) {
-        throw new Error('Login failed')
+        throw new Error('Login failed');
       }
-      console.log("alu")  
-      const data = await response.text()
 
-      console.log(data)
-      
-      // Store JWT token
-      localStorage.setItem('token', data)
-      //localStorage.setItem('user', JSON.stringify(data.user))
+      const token = await response.text();
+      localStorage.setItem('token', token);
 
-      // Redirect based on role
-      router.push(data.user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard')
+      // Fetch user profile with token
+      const profileData = await getUserProfile(token);
+      localStorage.setItem('user', JSON.stringify(profileData));
+      //console.log(profileData);
+
+      // Navigate based on role from profile
+      if (profileData.role === 'doctor') {
+        router.push('/doctor/dashboard');
+      } else {
+        router.push('/patient/landing');
+      }
     } catch (err) {
-      setError('Invalid credentials')
+      setError('Login failed. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>

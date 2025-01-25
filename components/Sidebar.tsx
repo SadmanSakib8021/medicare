@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Grid, Calendar, Users, Mail, BarChart2, Settings, LogOut } from "lucide-react"
+import { Grid, Calendar, Users, Mail, BarChart2, Settings, LogOut, UserCog } from "lucide-react"
 
 const menuItems = [
   { icon: Grid, label: "Dashboard", href: "/doctor/dashboard" },
@@ -10,6 +10,7 @@ const menuItems = [
   { icon: Users, label: "Patients", href: "/doctor/patients" },
   { icon: Mail, label: "Messages", href: "/doctor/messages" },
   { icon: BarChart2, label: "Report", href: "/doctor/report" },
+  { icon: UserCog, label: "Update Profile", href: "/doctor/updateProfile" },
   { icon: Settings, label: "Settings", href: "/doctor/settings" },
 ]
 
@@ -24,7 +25,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="bg-gray-100 h-screen w-64 fixed left-0 top-0 flex flex-col">
+    <aside className="bg-gray-100 h-[calc(100vh-64px)] w-64 fixed left-0 top-16 flex flex-col">
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => (

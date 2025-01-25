@@ -1,42 +1,79 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Edit, Heart, Scissors, AlertTriangle, Users, Activity } from "lucide-react"
+'use client';
 
-const medicalHistory = [
-  { category: "Chronic Disease", items: ["IHD", "Obesity", "Chronic thyroid disorder"], icon: Heart },
-  { category: "Surgery", items: ["Liposuction"], icon: Scissors },
-  { category: "Diabetes Emergencies", items: ["Diabetic Ketoacidosis"], icon: AlertTriangle },
-  { category: "Family Disease", items: ["Obesity (Father)"], icon: Users },
-  {
-    category: "Diabetes-related Complications",
-    items: ["Nephropathy", "Neuropathy", "Retinopathy", "Diabetic foot", "Sexual dysfunction"],
-    icon: Activity,
-  },
-]
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
 
-export default function MedicalHistory() {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-md font-medium">Medical History</CardTitle>
-        <Button variant="ghost" size="sm">
-          <Edit className="h-4 w-4" />
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
-          {medicalHistory.map((category) => (
-            <div key={category.category} className="flex items-start space-x-4">
-              <category.icon className="h-5 w-5 mt-0.5 text-gray-500" />
-              <div>
-                <h3 className="font-semibold">{category.category}</h3>
-                <p className="text-sm text-gray-600">{category.items.join(", ")}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
+interface MedicalHistoryItem {
+  diseaseName: string;
+  issuedDate: string;
 }
 
+export default function MedicalHistory() {
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
+
+  useEffect(() => {
+    const fetchMedicalHistory = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        const response = await fetch(
+          `http://localhost:9090/api/doctor/getprescription?Id=${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch medical history');
+        }
+
+        const data = await response.json();
+
+        // Map the data to extract the necessary fields
+        const medicalHistoryData = data.map((item: any) => ({
+          diseaseName: item.diseaseName,
+          issuedDate: item.issuedDate,
+        }));
+
+        setMedicalHistory(medicalHistoryData);
+      } catch (error) {
+        console.error('Error fetching medical history:', error);
+      }
+    };
+
+    fetchMedicalHistory();
+  }, []);
+
+  const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
+
+  return (
+    <div className="space-y-4">
+      {medicalHistory.length === 0 ? (
+        <p className="text-gray-600">No medical history available.</p>
+      ) : (
+        medicalHistory.map((item, index) => {
+          const date = new Date(item.issuedDate);
+          const formattedDate = isNaN(date.getTime())
+            ? 'Invalid date'
+            : dateFormatter.format(date);
+
+          return (
+            <Card key={index}>
+              <CardHeader>
+                <CardTitle className="text-md font-medium">{item.diseaseName}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">Date: {formattedDate}</p>
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
+    </div>
+  );
+}

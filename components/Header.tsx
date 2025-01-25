@@ -3,8 +3,9 @@ import { Search, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function Header({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
+
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-white shadow-md fixed w-full z-10 h-16"> {/* Added fixed positioning and z-index */}
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-blue-600">
           HealthCare
@@ -16,7 +17,7 @@ export default function Header({ isLoggedIn = false }: { isLoggedIn?: boolean })
           </div>
           <nav>
             <ul className="flex space-x-4">
-              <li>
+              {/* <li>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="flex items-center text-gray-600 hover:text-blue-600">
                     Healthcare Services <ChevronDown size={16} />
@@ -39,36 +40,36 @@ export default function Header({ isLoggedIn = false }: { isLoggedIn?: boolean })
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </li>
+              </li> */}
               <li>
-                <Link href="#" className="text-gray-600 hover:text-blue-600">
-                  Offers
+                <Link href={isLoggedIn ? "/patient/landing" : "/"} className="text-gray-600 hover:text-blue-600">
+                  HealthCare
                 </Link>
               </li>
               {isLoggedIn ? (
                 <>
-                  <li>
+                  {/* <li>
                     <Link href="/patient/dashboard" className="text-gray-600 hover:text-blue-600">
                       Dashboard
                     </Link>
-                  </li>
+                  </li> */}
                   <li>
                     <Link href="/patient/book-consultation" className="text-gray-600 hover:text-blue-600">
                       Book Consultation
                     </Link>
                   </li>
-                  <li>
+                  {/* <li>
                     <Link href="/patient/appointments" className="text-gray-600 hover:text-blue-600">
                       My Appointments
                     </Link>
-                  </li>
+                  </li> */}
                   <li>
                     <Link href="/patient/profile" className="text-gray-600 hover:text-blue-600">
                       Profile
                     </Link>
                   </li>
                   <li>
-                    <Link href="/logout" className="text-gray-600 hover:text-blue-600">
+                    <Link href="/login" className="text-gray-600 hover:text-blue-600">
                       Logout
                     </Link>
                   </li>

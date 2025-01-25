@@ -1,73 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import StatisticsDashboard from "@/components/StatisticsDashboard"
 import PatientNavBar from "@/components/PatientNavBar"
 import PatientCard from "@/components/PatientCard"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { set } from "date-fns"
 
 // Sample patient data
-const patients = [
-  {
-    id: 1,
-    name: "Robert Fox",
-    dateTime: "05 Feb, 11:00 am - 11:45 am",
-    counselingType: "Individual Counseling",
-    status: "completed",
-    profilePicture: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 2,
-    name: "Jane Cooper",
-    dateTime: "06 Feb, 2:00 pm - 2:45 pm",
-    counselingType: "Couple Therapy",
-    status: "upcoming",
-    profilePicture: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 3,
-    name: "Esther Howard",
-    dateTime: "07 Feb, 10:00 am - 10:45 am",
-    counselingType: "Family Counseling",
-    status: "cancelled",
-    profilePicture: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 4,
-    name: "Jenny Wilson",
-    dateTime: "08 Feb, 3:00 pm - 3:45 pm",
-    counselingType: "Group Therapy",
-    status: "upcoming",
-    profilePicture: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 5,
-    name: "Guy Hawkins",
-    dateTime: "09 Feb, 1:00 pm - 1:45 pm",
-    counselingType: "Individual Counseling",
-    status: "completed",
-    profilePicture: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 6,
-    name: "Wade Warren",
-    dateTime: "10 Feb, 11:30 am - 12:15 pm",
-    counselingType: "Couple Therapy",
-    status: "upcoming",
-    profilePicture: "/placeholder.svg?height=200&width=200",
-  },
-]
+
+
+interface Patient {
+ 
+  date: string;
+  patientName: string;
+  patientId: string;
+  status: string;
+}
+
+
 
 export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [bookings, setBookings] = useState([]);
+  const [patients, setPat] = useState<Patient[]>([]);
+  const [first, setFirst] = useState(" ");
 
-  const filteredPatients = patients.filter(
-    (patient) =>
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (statusFilter === "all" || patient.status === statusFilter),
-  )
-
+  const filteredPatients = patients.filter((patient) => {
+    if (statusFilter === "all") {
+      return patient;
+    } else {
+      console.log(patient.status);
+      console.log(statusFilter);
+      return patient.status.toLowerCase() === statusFilter;
+    }
+  });
+  
+  const aluMara = (value: string) => {
+    setStatusFilter(value)
+    console.log(statusFilter);
+  }
   const handleSearch = (term) => {
     setSearchTerm(term)
   }
@@ -77,12 +50,61 @@ export default function PatientsPage() {
     // Implement add patient functionality here
   }
 
+  useEffect(() => {
+    setFirst(" ");
+  }, []);
+
+  useEffect(() => {
+    
+    const fetchBookings = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        const response = await fetch(
+          `http://localhost:9090/api/booking/doctorBookings?doctorId=${user.id}`, 
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setBookings(data);
+          console.log(data);
+          data.map((booking: any) => {
+              const date= booking.appointmentDate;
+              booking.data.map((patient: any) => {
+                const obj = {
+                  name: patient.patientName,
+                  date: date,
+                  patientName: patient.patientName,
+                  patientId: patient.patientId,
+                  status: patient.status
+                }
+                patients.push(obj);
+              })
+          })
+          console.log("d djansd adnsadan ");
+          console.log(patients);
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        console.log(bookings);
+      }
+    };
+
+    fetchBookings();
+  }, [first]);
   return (
     <div className="p-6">
       <StatisticsDashboard />
       <PatientNavBar onSearch={handleSearch} onAddPatient={handleAddPatient} />
       <div className="mb-4">
-        <Select onValueChange={setStatusFilter}>
+        <Select onValueChange={aluMara}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -96,7 +118,7 @@ export default function PatientsPage() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredPatients.map((patient) => (
-          <PatientCard key={patient.id} patient={patient} />
+          <PatientCard  patient={patient} />
         ))}
       </div>
     </div>

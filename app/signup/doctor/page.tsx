@@ -23,13 +23,24 @@ const specializations = [
   "Urology",
 ]
 
-const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-
 export default function DoctorSignUp() {
   const router = useRouter()
-  const [schedules, setSchedules] = useState<Record<string, { start: string; end: string }>>({})
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  
+  const [formData, setFormData] = useState({
+    username: "",
+    name: "",
+    email: "",
+    password: "",
+    role: "doctor",
+    number: "",
+    expertise: "",
+    degree: "",
+    image: "",
+    verified: true
+  })
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -37,31 +48,36 @@ export default function DoctorSignUp() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setSelectedImage(reader.result as string)
+        setFormData(prev => ({...prev, image: file.name}))
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setSelectedFiles((prev) => [...prev, ...files])
-  }
-
-  const handleScheduleChange = (day: string, type: "start" | "end", value: string) => {
-    setSchedules((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [type]: value,
-      },
-    }))
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Form submitted")
-    router.push("/login")
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await fetch("http://localhost:9090/api/user/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error("Registration failed")
+      }
+
+      router.push("/login")
+    } catch (err) {
+      setError("Failed to register. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -73,111 +89,96 @@ export default function DoctorSignUp() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" required />
+                <Input 
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required />
+                <Input 
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
+                <Input 
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  required 
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contact">Contact Number</Label>
-                <Input id="contact" type="tel" required />
+                <Label htmlFor="number">Phone Number</Label>
+                <Input 
+                  id="number"
+                  value={formData.number}
+                  onChange={(e) => setFormData({...formData, number: e.target.value})}
+                  required 
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fees">Consultation Fees</Label>
-                <Input id="fees" type="number" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="specialization">Specialization</Label>
-                <Select required>
+                <Label htmlFor="expertise">Expertise</Label>
+                <Select 
+                  onValueChange={(value) => setFormData({...formData, expertise: value})}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select specialization" />
                   </SelectTrigger>
                   <SelectContent>
                     {specializations.map((spec) => (
-                      <SelectItem key={spec} value={spec.toLowerCase()}>
+                      <SelectItem key={spec} value={spec}>
                         {spec}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Address */}
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Textarea id="address" required />
-            </div>
-
-            {/* Profile Image */}
-            <div className="space-y-2">
-              <Label htmlFor="profile">Profile Image</Label>
-              <div className="flex items-center gap-4">
-                {selectedImage && (
-                  <img
-                    src={selectedImage || "/placeholder.svg"}
-                    alt="Profile preview"
-                    className="w-20 h-20 rounded-full object-cover"
-                  />
-                )}
-                <Input id="profile" type="file" accept="image/*" onChange={handleImageChange} required />
+              <div className="space-y-2">
+                <Label htmlFor="degree">Degree</Label>
+                <Input 
+                  id="degree"
+                  value={formData.degree}
+                  onChange={(e) => setFormData({...formData, degree: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="image">Profile Image</Label>
+                <Input 
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  required 
+                />
               </div>
             </div>
 
-            {/* Credentials Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="credentials">Degrees and Credentials</Label>
-              <Input
-                id="credentials"
-                type="file"
-                accept=".pdf,.doc,.docx"
-                multiple
-                onChange={handleFileChange}
-                required
-              />
-              {selectedFiles.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm font-medium">Selected files:</p>
-                  <ul className="text-sm text-gray-500">
-                    {selectedFiles.map((file, index) => (
-                      <li key={index}>{file.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Schedule */}
-            <div className="space-y-4">
-              <Label>Schedule</Label>
-              {weekDays.map((day) => (
-                <div key={day} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                  <Label>{day}</Label>
-                  <TimePicker
-                    value={schedules[day]?.start || ""}
-                    onChange={(value) => handleScheduleChange(day, "start", value)}
-                    placeholder="Start time"
-                  />
-                  <TimePicker
-                    value={schedules[day]?.end || ""}
-                    onChange={(value) => handleScheduleChange(day, "end", value)}
-                    placeholder="End time"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <Button type="submit" className="w-full">
-              Register
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Registering..." : "Register"}
             </Button>
           </form>
         </CardContent>
