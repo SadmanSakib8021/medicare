@@ -5,7 +5,6 @@ import StatisticsDashboard from "@/components/StatisticsDashboard"
 import PatientNavBar from "@/components/PatientNavBar"
 import PatientCard from "@/components/PatientCard"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { set } from "date-fns"
 
 // Sample patient data
 
@@ -117,7 +116,7 @@ export default function PatientsPage() {
         </Select>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filteredPatients.map((patient) => (
+        {filteredPatients.slice(0, (filteredPatients.length/2)).map((patient) => (
           <PatientCard  patient={patient} />
         ))}
       </div>

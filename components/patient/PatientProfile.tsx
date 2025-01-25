@@ -17,7 +17,7 @@ export default function PatientProfile() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Timeline />
         <div className="space-y-8">
-          <MedicalHistory />
+          {/* <MedicalHistory /> */}
           <Medications />
           <Diet />
         </div>

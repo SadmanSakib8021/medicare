@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Edit } from 'lucide-react';
+import { format } from 'date-fns';
 
-// Define interfaces for TypeScript
 interface Medicine {
   prescriptionId: number;
   name: string;
@@ -25,6 +25,35 @@ interface Medicine {
 
 export default function Medications() {
   const [medications, setMedications] = useState<Medicine[]>([]);
+
+  function getEndDateFromRange(rangeString: string): Date {
+    const parts = rangeString.split(" to ");
+    if (parts.length === 2) {
+      return new Date(parts[1].trim());
+    } else {
+      throw new Error("Invalid date range format");
+    }
+  }
+
+  
+
+function convert(alu: string) {
+  const parts = alu.split(" to ");
+  const pu = parts[0].trim();
+  const pu2 = parts[1].trim();
+  
+  // Parse the date strings into Date objects
+  const hisu = new Date(pu);
+  const hisu2 = new Date(pu2);
+  
+  // Format the dates using date-fns (or another library)
+  const startFormatted = format(hisu, "MMM dd, yyyy"); // Format start date
+  const endFormatted = format(hisu2, "MMM dd, yyyy"); // Format end date
+  
+  // Return the formatted string
+  return startFormatted + " to " + endFormatted;
+}
+
 
   useEffect(() => {
     const fetchMedications = async () => {
@@ -47,20 +76,31 @@ export default function Medications() {
 
         const data = await response.json();
 
-        // Extract medicines from prescriptions
         let medicationsData: Medicine[] = [];
 
         data.forEach((prescription: any) => {
           const { id: prescriptionId, issuedDate } = prescription;
           if (prescription.medicines && prescription.medicines.length > 0) {
             prescription.medicines.forEach((medicine: any) => {
-              medicationsData.push({
-                prescriptionId,
-                name: medicine.medicineName,
-                dose: medicine.dose,
-                duration: medicine.duration,
-                date: issuedDate,
-              });
+              const putu = medicine.duration;
+
+              const endDate = getEndDateFromRange(putu);
+
+              const today = new Date();
+
+              const hagu = convert(putu);
+
+
+
+              if (today <= endDate) {
+                medicationsData.push({
+                  prescriptionId,
+                  name: medicine.medicineName,
+                  dose: medicine.dose,
+                  duration: hagu,
+                  date: issuedDate,
+                });
+              }
             });
           }
         });
@@ -88,33 +128,38 @@ export default function Medications() {
         {medications.length === 0 ? (
           <p className="text-gray-600">No medications available.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Dose</TableHead>
-                <TableHead>Duration</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {medications.map((med, index) => {
-                const date = new Date(med.date);
-                const formattedDate = isNaN(date.getTime())
-                  ? 'Invalid date'
-                  : dateFormatter.format(date);
+          <div className="max-h-80 overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Dose</TableHead>
+                  <TableHead>Duration</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {medications
+                  .slice()
+                  .reverse()
+                  .map((med, index) => {
+                    const date = new Date(med.date);
+                    const formattedDate = isNaN(date.getTime())
+                      ? 'Invalid date'
+                      : dateFormatter.format(date);
 
-                return (
-                  <TableRow key={`${med.prescriptionId}-${index}`}>
-                    <TableCell className="font-medium">{med.name}</TableCell>
-                    <TableCell>{formattedDate}</TableCell>
-                    <TableCell>{med.dose}</TableCell>
-                    <TableCell>{med.duration}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    return (
+                      <TableRow key={`${med.prescriptionId}-${index}`}>
+                        <TableCell className="font-medium">{med.name}</TableCell>
+                        <TableCell>{formattedDate}</TableCell>
+                        <TableCell>{med.dose}</TableCell>
+                        <TableCell>{med.duration}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

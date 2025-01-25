@@ -8,12 +8,28 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Clock, User } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { X } from "lucide-react";
+
+import { CalendarIcon } from "lucide-react"
+
+import { DateRange, DayPicker } from "react-day-picker";
+
+
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { format, set } from "date-fns"
 
 // Define interfaces for clarity and type safety
 interface PrescriptionCard {
   medicine: string,
   dose: string,
-  duration: string
+  duration: DateRange;
 }
 
 interface Medicine {
@@ -45,7 +61,10 @@ interface DayBooking {
   appointmentDate: string;
   appointmentDay: string | null;
   data: Patient[];
+
 }
+
+
 
 export default function ConsultationPage({ params }: { params: { id: string } }) {
   // Define all Hooks at the top level
@@ -61,6 +80,10 @@ export default function ConsultationPage({ params }: { params: { id: string } })
   const [data, setData] = useState<Patient[]>([]);
   const [aluDate, setAluDate] = useState<Patient[]>([]);
   const [currentPatient, setCurrentPatient] = useState<Patient | null>(null);
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  })
   
 
   // Fetch today's bookings on component mount
@@ -140,7 +163,13 @@ export default function ConsultationPage({ params }: { params: { id: string } })
   }
 
   // Handle prescription card field changes
-  const handlePrescriptionCardChange = (index: number, field: keyof PrescriptionCard, value: string) => {
+  const handlePrescriptionCardChange = (index: number, field: keyof PrescriptionCard, value: any) => {
+    if(field === 'duration') {
+      const updatedCards = [...prescriptionCards]
+      updatedCards[index] = { ...updatedCards[index], [field]: value }
+      setPrescriptionCards(updatedCards)
+      return
+    }
     const updatedCards = [...prescriptionCards]
     updatedCards[index] = { ...updatedCards[index], [field]: value }
     setPrescriptionCards(updatedCards)
@@ -172,7 +201,7 @@ export default function ConsultationPage({ params }: { params: { id: string } })
       const formattedMedicines = prescriptionCards.map(card => ({
         medicineName: card.medicine,
         dose: card.dose,
-        duration: card.duration
+        duration: `${card.duration.from} to ${card.duration.to}`
       }));
 
       const payload: PrescriptionPayload = {
@@ -279,56 +308,97 @@ export default function ConsultationPage({ params }: { params: { id: string } })
               </div>
 
               {prescriptionCards.map((card, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                  <div className="space-y-2">
-                    <Label htmlFor={`medicine-${index}`}>Medicine</Label>
-                    <Select
-                      value={card.medicine}
-                      onValueChange={(value) => handlePrescriptionCardChange(index, 'medicine', value)}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select medicine" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Medicine A">Medicine A</SelectItem>
-                        <SelectItem value="Medicine B">Medicine B</SelectItem>
-                        <SelectItem value="Medicine C">Medicine C</SelectItem>
-                        {/* Add more medicines as needed */}
-                      </SelectContent>
-                    </Select>
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div className="space-y-2">
+                      <Label htmlFor={`medicine-${index}`}>Medicine</Label>
+                      <Select
+                        value={card.medicine}
+                        onValueChange={(value) => handlePrescriptionCardChange(index, 'medicine', value)}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select medicine" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Medicine A">Medicine A</SelectItem>
+                          <SelectItem value="Medicine B">Medicine B</SelectItem>
+                          <SelectItem value="Medicine C">Medicine C</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`dose-${index}`}>Dose</Label>
+                      <Input
+                        id={`dose-${index}`}
+                        value={card.dose}
+                        onChange={(e) => handlePrescriptionCardChange(index, 'dose', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`duration-${index}`}>Duration</Label>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="date"
+                              variant={"outline"}
+                              className={cn(
+                                "w-[300px] justify-start text-left font-normal",
+                                !date && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon />
+                              {card.duration.from? (
+                                card.duration.to ? (
+                                  <>
+                                    {format(card.duration.from, "LLL dd, y")} - {format(card.duration.to, "LLL dd, y")}
+                                  </>
+                                ) : (
+                                  format(card.duration.from, "LLL dd, y")
+                                )
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                              initialFocus
+                              mode="range"
+                              defaultMonth={date?.from}
+                              selected={prescriptionCards[index].duration} // Pass the currently selected range
+                              onSelect={(selectedRange) => {
+                                // Update the specific card's duration
+                                handlePrescriptionCardChange(index, 'duration', selectedRange);
+                              }}
+                              numberOfMonths={2}
+                            />
+
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                    <div className="space-y-2 flex justify-end">
+                      {/* Add proper margins or padding */}
+                      <Button
+                        variant="destructive"
+                        size={"icon"}
+                        onClick={() => setPrescriptionCards(prescriptionCards.filter((_, i) => i !== index))}
+                        className="mt-6 md:mt-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`dose-${index}`}>Dose</Label>
-                    <Input
-                      id={`dose-${index}`}
-                      value={card.dose}
-                      onChange={(e) => handlePrescriptionCardChange(index, 'dose', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`duration-${index}`}>Duration</Label>
-                    <Input
-                      id={`duration-${index}`}
-                      value={card.duration}
-                      onChange={(e) => handlePrescriptionCardChange(index, 'duration', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setPrescriptionCards(prescriptionCards.filter((_, i) => i !== index))}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
+                ))}
+
+
 
               <Button 
                 type="button" 
                 variant="default" 
-                onClick={() => setPrescriptionCards([...prescriptionCards, { medicine: "", dose: "", duration: "" }])}
+                onClick={() => setPrescriptionCards([...prescriptionCards, { medicine: "", dose: "", duration: { from: new Date(), to: new Date() } }])}
               >
                 ADD Medicine
               </Button>

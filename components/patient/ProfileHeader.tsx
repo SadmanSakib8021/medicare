@@ -1,21 +1,35 @@
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Phone, Mail, Edit } from "lucide-react"
+'use client';
+
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Phone, Mail, Edit } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function ProfileHeader() {
+  const [user, setUser] = useState<any>(null);  // Initialize with null or an empty object
+
+  useEffect(() => {
+    const use = JSON.parse(localStorage.getItem('user') || '{}');
+    setUser(use);
+  }, []);
+
+  if (!user) {
+    return <div>Loading...</div>;  // Add a loading state in case the user data is not available yet
+  }
+
   return (
     <div className="flex flex-col md:flex-row gap-6">
       <div className="flex-shrink-0">
         <img
           src="/placeholder.svg?height=150&width=150"
-          alt="Ahmed Ali Hussain"
+          alt={user.name || "User"}
           className="w-36 h-36 rounded-full object-cover"
         />
       </div>
       <div className="flex-grow">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Ahmed Ali Hussain</h1>
+            <h1 className="text-2xl font-bold mb-2">{user.name}</h1>
             <p className="text-gray-600 mb-1">Male | Elshiekh Zayed, Giza</p>
             <p className="text-gray-600 mb-1">Accountant</p>
             <p className="text-gray-600 mb-4">12 Dec 1992 (38 years)</p>
@@ -55,6 +69,5 @@ export default function ProfileHeader() {
         ))}
       </div>
     </div>
-  )
+  );
 }
-
